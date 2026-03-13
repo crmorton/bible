@@ -1,0 +1,89 @@
+# Podcast Enrichment Platform & Bible API: Architecture & Vision
+
+## Vision
+To build a powerful search engine and enrichment platform for theological content (specifically podcasts). By identifying Bible passage references within podcast episode metadata and transcripts, the platform enriches the content with raw Biblical text. This enables deep semantic search, RAG (Retrieval-Augmented Generation), and an enhanced user experience where users can read the referenced text inline in their preferred translation.
+
+## Target State Architecture
+The system is composed of three main layers for data storage, retrieval, and presentation:
+
+### 1. Relational Database (PostgreSQL)
+* **Purpose:** Stores core podcast data (shows, episodes, host details, metadata).
+* **Enrichment Strategy:** Stores the *reference strings* (e.g., "Matt 4:1-11") of identified Bible passages rather than raw HTML. This minimizes database bloat and allows the presentation layer to decide how to style and format the text dynamically.
+
+* **Presentation / Bible API (FastAPI & SQLite)**
+  * **Purpose:** Dynamically serves perfectly styled HTML for Bible references.
+  * **Stack:** A FastAPI server running a V8 JS engine (`py-mini-racer`) to execute `en_bcv_parser.js`. It reads from a highly optimized SQLite database (`bible.db`).
+  * **Robust Parsing:** Uses the industry-standard `bcv_parser` to normalize diverse inputs (e.g., "Matt 4", "Matthew 4:1-5:18", "1 John 3:16") without requiring manual book mappings or regex.
+  * **Multi-Chapter Support:** Correctly identifies and queries ranges spanning across chapters, reconstructing the DOM across boundaries.
+  * **In-Memory Optimization:** The entire database is loaded into RAM on startup for ultra-fast performance.
+  * **Dockerized Deployment:** Managed via Docker Compose, containerizing the Python service and the JS engine.
+  * **Data Source:** Pre-parsed `.psv` files from Bible scrapes, ingested into SQLite via `ingest_bible.py`.
+  * **Workflow:** When a user views a podcast episode, the frontend takes the reference string from Postgres and calls the FastAPI service. The API parses the string via JS, queries the SQLite spans, and reconstructs the high-fidelity HTML.
+
+### 3. Vector Database / Semantic Search Engine
+* **Purpose:** Enables advanced semantic search across podcast transcripts.
+* **Ingestion Pipeline:** An offline batch process that:
+  1. Scans transcript chunks for Biblical references.
+  2. Queries the SQLite database for the plain text of the referenced verses.
+  3. Appends the raw Biblical text to the transcript chunk metadata.
+  4. Generates vector embeddings for the combined payload and stores it in the Vector DB.
+* **Benefit:** A search query like "relying on God's word for sustenance" will semantically match episodes referencing Matthew 4:4, even if the transcript only explicitly says "As we see in Matt 4:4...".
+
+---
+
+## Architectural Robustness & Trade-offs
+
+During development, we evaluated whether to use the original HTML files with XSLT transformations and an XML database. We chose the **SQLite + Span-level FastAPI** approach for the following reasons:
+
+- **Error Resilience:** Unlike XML/XSLT, where a single malformed tag can break a transformation, SQLite treats each content span as an independent row. A formatting error in one verse does not compromise the availability of the rest of the 1,000,000+ records.
+- **Performance at Scale:** With a target of 13 million+ enrichments, the speed of indexed SQL lookups is significantly higher than XML traversal or XSLT execution.
+- **Calculated Flexibility:** By storing the "DNA" of the text (spans + path attributes), we can dynamically inject elements like chapter numbers, verse numbers, and indentation spacers in code. This is more maintainable and easier to debug than complex XSLT sheets.
+- **Maintainability:** SQL and Python are standard industry tools. This architecture ensures that any developer can jump in and modify the rendering logic without specialized XML database knowledge.
+
+## Key Technical Decisions
+
+### 1. SQLite for Bible Text Storage
+**Decision:** Use an indexed SQLite database instead of persisting HTML strings in PostgreSQL.
+**Reasoning:** Storing ~13 million dynamically generated HTML snippets in Postgres (for every enriched podcast reference) would consume an estimated 15-30 GB of unnecessary space. SQLite is incredibly fast for read-only lookups. We cast columns like `bg_id` and `para_md5` to `INTEGER` to heavily optimize variable-length storage. An index on `(translation, book, chapter)` ensures sub-millisecond query performance.
+
+### 2. Pre-parsed Data Ingestion
+**Decision:** Ingest from `.psv` files instead of parsing raw `.html` scrapes.
+**Reasoning:** The `.psv` files already contain structured DOM path data (e.g., `div.poetry->p.line`) and metadata (`h3` headers, `para_md5` paragraph hashes, `span_id`). This makes recreating the perfectly styled HTML programmatically much more reliable than attempting to parse raw HTML natively with Beautiful Soup.
+
+### 3. Dynamic HTML Reconstruction
+**Decision:** The FastAPI server reconstructs HTML on the fly from the database records.
+**Reasoning:** Allows adding targeted features like inline chapter/verse numbers (`<span class="chapternum">`, `<sup class="versenum">`) and handling complex poetic line breaks (`<br>`) dynamically. It also allows users to switch translations on the frontend instantly without complex backend migrations.
+
+---
+
+## Developer Guide
+
+### Running the Bible API
+The API provides the HTML shards for the frontend.
+```powershell
+# Activate the virtual environment
+& c:/Projects/_dev-workspace/__Antigravity/bible/.venv/Scripts/Activate.ps1
+
+# Run the API server
+python api.py
+```
+*Test the application locally at:* `http://127.0.0.1:8000/passage?ref=Matthew%204:1-11&translation=LEB`
+
+### Running with Docker
+The API is containerized for easy deployment.
+1. Ensure your `bible.db` is present in the root directory.
+2. Run the compose stack:
+```bash
+docker-compose up --build
+```
+3. The API will be available at `http://localhost:8000`, with the database automatically loaded into memory.
+
+### Re-ingesting Data
+If the database schema changes, or if new `.psv` translations are scraped, re-run the ingestion pipeline. It will drop the existing `verses` table and re-populate the millions of rows from scratch.
+```powershell
+# Activate the virtual environment
+& c:/Projects/_dev-workspace/__Antigravity/bible/.venv/Scripts/Activate.ps1
+
+# Run the ingestion script
+python ingest_bible.py
+```

@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  bible-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_PATH=/app/data/bible.db
+      - LOAD_IN_MEMORY=true
+      - PORT=8000
+    volumes:
+      - ./bible_2026.db:/app/data/bible.db:ro
+    restart: unless-stopped

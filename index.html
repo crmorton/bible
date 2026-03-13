@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bible Passage Viewer</title>
+    <!-- Use local CSS from scraping -->
+    <link rel="stylesheet" href="./bible-gateway/base.css">
+    <link rel="stylesheet" href="./bible-gateway/passage-text.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input,
+        select,
+        button {
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        input {
+            flex: 1;
+        }
+
+        .text-html {
+            /* Ensures our loaded HTML aligns with passage-text.css */
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Bible API Mock</h1>
+        <div class="controls">
+            <input type="text" id="ref" value="Matthew 4:1-11" placeholder="e.g. Matthew 4:1-11">
+            <select id="translation">
+                <!-- Dynamic translations will be loaded here -->
+            </select>
+            <button onclick="fetchPassage()">Search</button>
+        </div>
+
+        <div id="output" class="text-html text-indent">
+            <!-- Rendered HTML will appear here -->
+            <p style="color: grey;">Results will appear here...</p>
+        </div>
+    </div>
+
+    <script>
+        // Load translations on startup
+        document.addEventListener('DOMContentLoaded', async () => {
+            const transSelect = document.getElementById('translation');
+            try {
+                const response = await fetch('http://localhost:8000/translations');
+                const data = await response.json();
+                if (data.translations) {
+                    transSelect.innerHTML = data.translations.map(t => `<option value="${t}" ${t === 'MSG' ? 'selected' : ''}>${t}</option>`).join('');
+                }
+            } catch (err) {
+                console.error('Failed to load translations:', err);
+                transSelect.innerHTML = '<option value="LEB">LEB (Fallback)</option>';
+            }
+        });
+
+        async function fetchPassage() {
+            const ref = document.getElementById('ref').value;
+            const translation = document.getElementById('translation').value;
+            const output = document.getElementById('output');
+
+            output.innerHTML = '<p>Loading...</p>';
+
+            try {
+                const url = `http://localhost:8000/passage?ref=${encodeURIComponent(ref)}&translation=${encodeURIComponent(translation)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.error) {
+                    output.innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
+                } else if (data.html) {
+                    // The structure from bible-gateway usually requires some wrapper divs.
+                    // We'll wrap it in standard text-html to match the CSS definitions.
+                    output.innerHTML = `<div class="passage-box">${data.html}</div>`;
+                } else {
+                    output.innerHTML = '<p>Unexpected error occurred.</p>';
+                }
+            } catch (err) {
+                output.innerHTML = `<p style="color:red;">Network Error: ${err.message}</p>`;
+            }
+        }
+    </script>
+
+</body>
+
+</html>
