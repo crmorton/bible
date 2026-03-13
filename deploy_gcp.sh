@@ -6,7 +6,8 @@ set -e
 PROJECT_ID="kerygma-didache-logos"
 IMAGE_NAME="bible-api-prod"
 # Target regions for low latency across Globe
-REGIONS=("us-central1" "europe-west4" "asia-northeast1" "australia-southeast1")
+# REGIONS=("us-central1" "europe-west4" "asia-northeast1" "australia-southeast1")
+REGIONS=("us-central1")
 
 echo "======================================================"
 echo " Building and Deploying Bible API to Google Cloud Run "
