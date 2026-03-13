@@ -13,9 +13,13 @@ The system is composed of three main layers for data storage, retrieval, and pre
 * **Presentation / Bible API (FastAPI & SQLite)**
   * **Purpose:** Dynamically serves perfectly styled HTML for Bible references.
   * **Stack:** A FastAPI server running a V8 JS engine (`py-mini-racer`) to execute `en_bcv_parser.js`. It reads from a highly optimized SQLite database (`bible.db`).
-  * **Robust Parsing:** Uses the industry-standard `bcv_parser` to normalize diverse inputs (e.g., "Matt 4", "Matthew 4:1-5:18", "1 John 3:16") without requiring manual book mappings or regex.
-  * **Multi-Chapter Support:** Correctly identifies and queries ranges spanning across chapters, reconstructing the DOM across boundaries.
-  * **In-Memory Optimization:** The entire database is loaded into RAM on startup for ultra-fast performance.
+  * **Robust Parsing**: Uses the industry-standard `bcv_parser` for natural language inputs, and a custom **OSIS Fast-Path** for machine-detectable strings (e.g., `osis:Matt.5.8`) to bypass the JS engine.
+  * **Multi-Chapter Support**: Correctly identifies and queries ranges spanning across chapters, reconstructing the DOM across boundaries.
+  * **Global Scaling & Multi-Regional Deployment**: 
+    * **Containerization**: Use `Dockerfile.prod` to bake the SQLite database directly into the container image for stateless, ultra-portable deployment.
+    * **Compute**: Deployed to multiple **Google Cloud Run** regions (`us-central1`, `europe-west4`, `asia-northeast1`, `australia-southeast1`) for low-latency compute.
+    * **Edge Entry**: Fronted by a **Cloudflare Load Balancer** with Geo-Steering and aggressive **Edge Caching** (`Cache-Control: public, max-age=86400`) to handle 10M+ daily requests.
+  * **In-Memory Optimization**: The entire database is loaded into RAM on startup for ultra-fast performance.
   * **Dockerized Deployment:** Managed via Docker Compose, containerizing the Python service and the JS engine.
   * **Data Source:** Pre-parsed `.psv` files from Bible scrapes, ingested into SQLite via `ingest_bible.py`.
   * **Workflow:** When a user views a podcast episode, the frontend takes the reference string from Postgres and calls the FastAPI service. The API parses the string via JS, queries the SQLite spans, and reconstructs the high-fidelity HTML.
@@ -46,9 +50,9 @@ During development, we evaluated whether to use the original HTML files with XSL
 **Decision:** Use an indexed SQLite database instead of persisting HTML strings in PostgreSQL.
 **Reasoning:** Storing ~13 million dynamically generated HTML snippets in Postgres (for every enriched podcast reference) would consume an estimated 15-30 GB of unnecessary space. SQLite is incredibly fast for read-only lookups. We cast columns like `bg_id` and `para_md5` to `INTEGER` to heavily optimize variable-length storage. An index on `(translation, book, chapter)` ensures sub-millisecond query performance.
 
-### 2. Pre-parsed Data Ingestion
-**Decision:** Ingest from `.psv` files instead of parsing raw `.html` scrapes.
-**Reasoning:** The `.psv` files already contain structured DOM path data (e.g., `div.poetry->p.line`) and metadata (`h3` headers, `para_md5` paragraph hashes, `span_id`). This makes recreating the perfectly styled HTML programmatically much more reliable than attempting to parse raw HTML natively with Beautiful Soup.
+### 2. Direct HTML Ingestion
+**Decision:** Ingest directly from raw `.html` scrapes using `ingest_html.py` instead of intermediate `.psv` files.
+**Reasoning:** Direct HTML parsing allows for higher fidelity capture of structural markers (like `div.poetry`) and better data integrity. The ingestion pipeline uses BeautifulSoup to traverse the DOM and extract contiguous content spans, storing their parent path and paragraph hashes for perfect reconstruction in the API.
 
 ### 3. Dynamic HTML Reconstruction
 **Decision:** The FastAPI server reconstructs HTML on the fly from the database records.
@@ -79,11 +83,11 @@ docker-compose up --build
 3. The API will be available at `http://localhost:8000`, with the database automatically loaded into memory.
 
 ### Re-ingesting Data
-If the database schema changes, or if new `.psv` translations are scraped, re-run the ingestion pipeline. It will drop the existing `verses` table and re-populate the millions of rows from scratch.
+If the source HTML files change, or if rendering logic requires new metadata, re-run the ingestion pipeline. It will drop the existing `verses` table and re-populate the millions of rows from scratch.
 ```powershell
 # Activate the virtual environment
 & c:/Projects/_dev-workspace/__Antigravity/bible/.venv/Scripts/Activate.ps1
 
 # Run the ingestion script
-python ingest_bible.py
+python ingest_html.py
 ```

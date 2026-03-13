@@ -1,0 +1,20 @@
+.agent/
+.git
+.gitignore
+.gcloudignore
+.old/
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.env
+test/
+
+# Allow DB for production build
+!bible_v2.db
+bible_2025.db
+bible_2026.db
+bible-gateway/
+.vscode/
+.idea/
+.docker/

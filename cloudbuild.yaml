@@ -1,0 +1,5 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/kerygma-didache-logos/bible-api-prod', '-f', 'Dockerfile.prod', '.']
+# Push the image to Google Container Registry
+images: ['gcr.io/kerygma-didache-logos/bible-api-prod']

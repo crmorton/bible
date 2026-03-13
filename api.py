@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 import sqlite3
@@ -6,11 +6,12 @@ from pathlib import Path
 import re
 import os
 import json
+from functools import lru_cache
 from py_mini_racer.py_mini_racer import MiniRacer
 from contextlib import asynccontextmanager
 
 # Configuration
-DB_PATH = Path(os.getenv("DB_PATH", r"C:\Projects\_dev-workspace\__Antigravity\bible\bible.db"))
+DB_PATH = Path(os.getenv("DB_PATH", r"C:\Projects\_dev-workspace\__Antigravity\bible\bible_v2.db"))
 LOAD_IN_MEMORY = os.getenv("LOAD_IN_MEMORY", "false").lower() == "true"
 
 # Global database connection for in-memory mode
@@ -18,11 +19,11 @@ in_memory_conn = None
 # Global bcv parser object
 bcv_parser = None
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global in_memory_conn, bcv_parser
-    
-    # Initialize JS bcv_parser
+def init_bcv_parser():
+    global bcv_parser
+    if bcv_parser is not None:
+        return bcv_parser
+        
     js_path = Path("en_bcv_parser.js")
     if js_path.exists():
         print(f"Loading {js_path}...")
@@ -34,6 +35,15 @@ async def lifespan(app: FastAPI):
         bcv_parser.eval("bcv = new bcv_parser()")
         bcv_parser.eval('bcv.set_options({ "consecutive_combination_strategy": "separate", "osis_compaction_strategy": "bc", "sequence_combination_strategy": "separate" });')
         print("JS bcv_parser initialized via py-mini-racer.")
+        return bcv_parser
+    return None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global in_memory_conn
+    
+    # Initialize JS bcv_parser
+    init_bcv_parser()
 
     if LOAD_IN_MEMORY and DB_PATH.exists():
         print(f"Loading database {DB_PATH} into memory...")
@@ -70,14 +80,67 @@ async def add_private_network_access_header(request, call_next):
 
 
 
+@lru_cache(maxsize=1024)
+def parse_ref_cached(ref_str: str):
+    """Internal cached version of parse_ref to minimize JS overhead."""
+    parser = init_bcv_parser()
+    if not parser:
+        return []
+    # Escaping single quotes for JS consumption
+    safe_ref = ref_str.replace("'", "\\'")
+    js_cmd = f"JSON.stringify(bcv.parse('{safe_ref}').parsed_entities().map(entity => ({{ osis: entity.osis, start: entity.start, end: entity.end }})))"
+    res_json = parser.eval(js_cmd)
+    return json.loads(str(res_json))
+
 def parse_ref(ref_str: str):
+    # Fast-path for OSIS references
+    if ref_str.startswith("osis:"):
+        ref_text = ref_str[5:] # type: ignore
+        # Patterns: 
+        # Single point: Book.Chap[.Verse]
+        # Range: Book.Chap[.Verse]-Book.Chap[.Verse] (Book usually same)
+        # We'll split by '-' and parse each part.
+        parts = ref_text.split('-')
+        
+        def parse_osis_part(part):
+            # Regex to match Book.Chapter.Verse or Book.Chapter
+            match = re.match(r'^([1-3]?[A-Za-z]+)\.(\d+)(?:\.(\d+))?$', part)
+            if not match:
+                return None
+            book = match.group(1)
+            chapter = int(match.group(2))
+            verse = int(match.group(3)) if match.group(3) else None
+            return {"b": book, "c": chapter, "v": verse}
+
+        start_entity = parse_osis_part(parts[0])
+        if not start_entity:
+            return None
+            
+        if len(parts) > 1:
+            end_entity = parse_osis_part(parts[1])
+            if not end_entity:
+                return None
+        else:
+            end_entity = start_entity.copy()
+
+        # If verse is missing in an OSIS part, we treat it as the whole chapter
+        # We need to set v_start=1 and v_end to something large if it's a chapter-level ref
+        # but the JS parser usually returns v=1 for start of chapter and v=999(ish) for end?
+        # Let's check how the DB query handles it. 
+        # v_start and v_end in DB are integers.
+        # If user says Ps.121, they mean the whole chapter 121.
+        
+        return {
+            "book": start_entity["b"],
+            "c_start": start_entity["c"],
+            "v_start": start_entity["v"] if start_entity["v"] is not None else 1,
+            "c_end": end_entity["c"],
+            "v_end": end_entity["v"] if end_entity["v"] is not None else 999 
+        }
+
     # Use the JS parser
     try:
-        # Escaping single quotes for JS consumption
-        safe_ref = ref_str.replace("'", "\\'")
-        js_cmd = f"JSON.stringify(bcv.parse('{safe_ref}').parsed_entities().map(entity => ({{ osis: entity.osis, start: entity.start, end: entity.end }})))"
-        res_json = bcv_parser.eval(js_cmd)
-        entities = json.loads(str(res_json))
+        entities = parse_ref_cached(ref_str)
         
         if not entities:
             return None
@@ -101,7 +164,9 @@ def parse_ref(ref_str: str):
         return None
 
 @app.get("/translations")
-def get_translations():
+def get_translations(response: Response):
+    # Cache translations for 24 hours at the Edge
+    response.headers["Cache-Control"] = "public, max-age=86400"
     conn = in_memory_conn if (LOAD_IN_MEMORY and in_memory_conn) else sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT DISTINCT translation FROM verses ORDER BY translation;")
@@ -120,8 +185,12 @@ def parse_tag(tag_str):
     return f"<{tag_name}{class_attr}>", f"</{tag_name}>"
 
 @app.get("/passage")
-def get_passage(ref: str = Query(..., description="Bible passage reference, e.g., 'Matthew 4:1-11'"),
+def get_passage(response: Response,
+                ref: str = Query(..., description="Bible passage reference, e.g., 'Matthew 4:1-11'"),
                 translation: str = Query("MSG", description="Translation acronym, e.g., 'MSG'")):
+    # Cache passage for 24 hours at the Edge (Cloudflare)
+    response.headers["Cache-Control"] = "public, max-age=86400"
+    
     parsed = parse_ref(ref)
     if not parsed: return {"error": "Invalid reference format. Use e.g. 'Matthew 4:1-11'"}
     
@@ -133,22 +202,35 @@ def get_passage(ref: str = Query(..., description="Bible passage reference, e.g.
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     
-    # Query overlapping verses or multi-chapter ranges
-    cursor.execute('''
+    # Optimized range query
+    # Branches:
+    # 1. Start and end are in the same chapter
+    # 2. Multi-chapter range: Start chapter
+    # 3. Multi-chapter range: End chapter
+    # 4. Multi-chapter range: Intermediate chapters
+    query = '''
         SELECT * FROM verses 
-        WHERE translation = ? 
-          AND book = ? 
+        WHERE translation = :translation 
+          AND book = :book 
           AND (
-            (chapter = ? AND chapter = ? AND verse_start <= ? AND verse_end >= ?)
+            (chapter = :c_start AND chapter = :c_end AND verse_start <= :v_end AND verse_end >= :v_start)
             OR
-            (chapter = ? AND ? < ? AND verse_end >= ?)
+            (chapter = :c_start AND :c_start < :c_end AND verse_end >= :v_start)
             OR
-            (chapter = ? AND ? < ? AND verse_start <= ?)
+            (chapter = :c_end AND :c_start < :c_end AND verse_start <= :v_end)
             OR
-            (chapter > ? AND chapter < ?)
+            (chapter > :c_start AND chapter < :c_end)
           )
         ORDER BY chapter, verse_start ASC
-    ''', (translation, book, c_start, c_end, v_end, v_start, c_start, c_start, c_end, v_start, c_end, c_start, c_end, v_end, c_start, c_end))
+    '''
+    cursor.execute(query, {
+        "translation": translation, 
+        "book": book, 
+        "c_start": c_start, 
+        "c_end": c_end, 
+        "v_start": v_start, 
+        "v_end": v_end
+    })
     
     rows = cursor.fetchall()
     if not (LOAD_IN_MEMORY and in_memory_conn):
@@ -267,7 +349,17 @@ def get_passage(ref: str = Query(..., description="Bible passage reference, e.g.
     while current_path_tags:
         res_html.append(current_path_tags.pop()[1])
 
-    return {"html": "".join(res_html)}
+    inner_html = "".join(res_html)
+    # Wrap in redundant containers for CSS compatibility
+    wrapped_html = (
+        f'<div class="passage-text">'
+        f'<div class="passage-content passage-class-0">'
+        f'<div class="version-{translation} result-text-style-normal text-html">'
+        f'{inner_html}'
+        f'</div></div></div>'
+    )
+
+    return {"html": wrapped_html}
 
 if __name__ == "__main__":
     import uvicorn

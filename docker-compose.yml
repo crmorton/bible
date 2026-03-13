@@ -10,5 +10,5 @@ services:
       - LOAD_IN_MEMORY=true
       - PORT=8000
     volumes:
-      - ./bible_2026.db:/app/data/bible.db:ro
+      - ./bible_v2.db:/app/data/bible.db:ro
     restart: unless-stopped

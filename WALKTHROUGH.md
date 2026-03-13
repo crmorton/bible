@@ -3,13 +3,17 @@
 ## What was Accomplished
 We took the folder of scraped `HTML`/`.psv` files and created a full end-to-end pipeline to serve Bible passages dynamically via a mock API.
 This included:
-1. **SQLite Database Schema**: Created a `verses` table in `bible.db` that maps to the data provided in the `.psv` files.
-2. **Data Ingestion Script**: `ingest_bible.py` parses all `.psv` files found in the corpus and natively loads them into the DB. The script auto-extracts the book, chapter, and verse references. **Over 127k verses were successfully ingested!**
-3. **Advanced Reference Parsing**: Integrated the industry-standard `bcv_parser` (JavaScript) via `py-mini-racer`. This allows for robust parsing of nearly any Bible citation format without needing a local Node.js environment.
-4. **Multi-Chapter Support**: The API now correctly handles ranges stretching across chapters (e.g., `Matthew 4:1-5:18`), fetching and concatenating the spans in the correct order.
-5. **Streamlined Logic**: Removed the manual `BOOK_MAP` in favor of the parser's built-in normalization, making the service more robust and maintainable.
-6. **Dockerization**: The API is fully containerized, including the V8-powered JS engine and optimized in-memory database loading.
-7. **Test Frontend**: `index.html` provides a clean UI to input a reference and select a translation.
+1. **SQLite Database Schema**: Created a `verses` table in `bible_v2.db` with optimized indexing.
+2. **Data Ingestion Script**: `ingest_html.py` now parses raw HTML directly, ensuring high fidelity for structural markers like poetry and headings. **Over 298k unique content spans are now indexed (deduplicated)!**
+3. **Advanced Reference Parsing**: Integrated `bcv_parser` (JS) via `py-mini-racer` for robust, standard-compliant reference handling.
+4. **Multi-Chapter Support**: Seamlessly reconstructs DOM across chapter boundaries.
+5. **Poetry & Formatting Fixes**: Restored and improved the rendering of poetic blocks and indentation.
+6. **Dockerization**: Fully containerized with in-memory SQLite loading for sub-millisecond lookups.
+7. **Deduplication Mechanism**: Implemented on-the-fly deduplication in `ingest_html.py` to handle overlapping content in source HTML files, ensuring a clean and efficient database.
+8. **DOM Path Optimization**: Trimmed redundant high-level container prefixes from the database paths, moving them to a dynamic wrapper in the API. This reduces database size and improves payload efficiency.
+9. **Knowledge Items**: Created a dedicated `.agent/knowledge_items` directory containing technical deep-dives into data ingestion, rendering logic, and reference parsing to aid future development.
+10. **Git Configuration**: Added a `.gitignore` to protect the repository from large data files and environment artifacts.
+11. **Test Frontend**: `index.html` provides a clean UI for verification.
 
 ## How to Verify
 
