@@ -1,0 +1,610 @@
+.text-html p,
+.text-html td {
+  font-size: 16px;
+  font-size: 1.6rem;
+  line-height: 24px;
+  line-height: 2.4rem;
+}
+.text-html p,
+.text-html td,
+.text-html th {
+  font-family: var(--bible-text-font-family);
+}
+.result-text-style-rtl {
+  direction: rtl;
+}
+.text-html.result-text-style-rtl div.poetry p span.chapternum,
+.text-html.result-text-style-rtl-serif div.poetry p span.chapternum {
+  display: inline;
+  position: relative;
+  left: 0;
+  bottom: 0;
+}
+.text-html.result-text-style-rtl div.poetry p .versenum,
+.text-html.result-text-style-rtl-serif div.poetry p .versenum {
+  display: inline;
+  position: relative;
+  left: 0;
+}
+.text-html .versenum {
+  font-family: var(--sans-serif-font-family);
+  font-weight: bold;
+  font-size: 12px;
+  font-size: 1.2rem;
+}
+.text-html span.chapternum {
+  /* color: #676767; */
+  font-size: 24px;
+  font-size: 2.4rem;
+  font-family: var(--sans-serif-font-family);
+  font-weight: bold;
+  position: relative;
+  line-height: 0.8em;
+  bottom: -0.1em;
+  left: 0;
+  text-indent: 0;
+}
+.text-html p.chapter-3 span.chapternum {
+  font-size: 16px;
+  font-size: 1.6rem;
+  bottom: 0;
+}
+.show-woj .text-html .woj {
+  color: red;
+}
+.text-html span.woj span.chapternum {
+  color: #4f0d00;
+}
+.text-html span.chapternum.mid-paragraph,
+.text-html p.center span.chapternum {
+  position: relative;
+  bottom: -0.15em;
+  float: left;
+}
+.text-html .indent-1-breaks {
+  font-family: monospace;
+  font-size: 0.42em;
+  line-height: 0;
+}
+.text-html div.indent-1 {
+  margin-left: 1em;
+  margin-right: 1em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+.text-html p.left-1.hang-1 {
+  margin-left: 2em;
+}
+.text-html p.left-1.hang-2 {
+  margin-left: 3em;
+}
+.text-html p.left-1.hang-3 {
+  margin-left: 4em;
+}
+.text-html p.left-2.hang-1 {
+  margin-left: 3em;
+}
+.text-html p.left-2.hang-2 {
+  margin-left: 4em;
+}
+.text-html p.left-1,
+.text-html div.left-1,
+.text-html h3.left-1 {
+  margin-left: 1em;
+  margin-left: 1.6rem;
+  position: relative;
+}
+.text-html p.left-2,
+.text-html div.left-2,
+.text-html h3.left-2 {
+  margin-left: 2em;
+  margin-left: 3.2rem;
+  position: relative;
+}
+.text-html p.left-3,
+.text-html div.left-3,
+.text-html h3.left-3 {
+  margin-left: 3em;
+  margin-left: 4.8rem;
+  position: relative;
+}
+.text-html p.left-4,
+.text-html div.left-4,
+.text-html h3.left-4 {
+  margin-left: 4em;
+  margin-left: 6.4rem;
+  position: relative;
+}
+.text-html p.left-5,
+.text-html div.left-5,
+.text-html h3.left-5 {
+  margin-left: 5em;
+  margin-left: 8rem;
+  position: relative;
+}
+.text-html p.left-6,
+.text-html div.left-6,
+.text-html h3.left-6 {
+  margin-left: 6em;
+  margin-left: 9.6rem;
+  position: relative;
+}
+.text-html p.left-7,
+.text-html div.left-7,
+.text-html h3.left-7 {
+  margin-left: 7em;
+  margin-left: 11.2rem;
+  position: relative;
+}
+.text-html p.right-1,
+.text-html div.right-1,
+.text-html h3.right-1 {
+  margin-right: 1em;
+}
+.text-html p.right-2,
+.text-html div.right-2,
+.text-html h3.right-2 {
+  margin-right: 2em;
+}
+.text-html p.right-3,
+.text-html div.right-3,
+.text-html h3.right-3 {
+  margin-right: 3em;
+}
+.text-html p.right-4,
+.text-html div.right-4,
+.text-html h3.right-4 {
+  margin-right: 4em;
+}
+.text-html p.right-5,
+.text-html div.right-5,
+.text-html h3.right-5 {
+  margin-right: 5em;
+}
+.text-html p.right-6,
+.text-html div.right-6,
+.text-html h3.right-6 {
+  margin-right: 6em;
+}
+.text-html p.right-7,
+.text-html div.right-7,
+.text-html h3.right-7 {
+  margin-right: 7em;
+}
+.text-html div.top-none,
+.text-html p.top-none,
+.text-html table.top-none {
+  margin-top: -0.75em;
+}
+.text-html div.top-05,
+.text-html p.top-05,
+.text-html table.top-05 {
+  margin-top: -0.5em;
+}
+.text-html div.top-1,
+.text-html p.top-1,
+.text-html table.top-1,
+.text-html div.child-vertical-none p.top-1 {
+  margin-top: 1em;
+}
+.text-html tr.top-1 td {
+  padding-top: 1em;
+}
+.text-html table + .top-05 {
+  margin-top: 0.5em;
+}
+.text-html .hang-1 {
+  margin-left: 1em;
+  text-indent: -1em;
+}
+.text-html .hang-2 {
+  margin-left: 2em;
+  text-indent: -2em;
+}
+.text-html .hang-3 {
+  margin-left: 3em;
+  text-indent: -3em;
+}
+.text-html .hang-4 {
+  margin-left: 4em;
+  text-indent: -4em;
+}
+.text-html .hang-5 {
+  margin-left: 5em;
+  text-indent: -5em;
+}
+.text-html .hang-6 {
+  margin-left: 6em;
+  text-indent: -6em;
+}
+.text-html .hang-7 {
+  margin-left: 7em;
+  text-indent: -7em;
+}
+.text-html div.poetry {
+  margin-left: 1em;
+  position: relative;
+  padding-left: 2.6em;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+.text-html div.poetry.left-2 {
+  margin-left: 2em;
+}
+.text-html div.poetry p {
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-left: 0;
+}
+.text-html div.poetry p .text {
+  position: relative;
+}
+.text-html div.poetry p .versenum {
+  display: block;
+  position: absolute;
+  left: -4.4em;
+}
+.text-html .footnotes div.poetry p .versenum {
+  left: -1.25em;
+}
+.text-html div.poetry p span.chapternum {
+  position: absolute;
+  left: -2em;
+}
+.text-html div.left-1 p span.chapternum {
+  text-indent: -1em;
+}
+.text-html div.poetry p span.chapternum.mid-line {
+  font-size: 1em;
+  position: static;
+}
+.text-html div.poetry sup.mid-line,
+.text-html.text-indent div.poetry p sup.mid-line {
+  margin: 0;
+  display: inline;
+  position: static;
+}
+.text-html div.poetry h4 {
+  text-indent: -1em;
+}
+.text-html div.poetry h4 + p {
+  margin-top: 0.5em;
+}
+.text-html div.left-1.poetry {
+  margin-left: 2em;
+}
+.text-html div.list .indent-1 {
+  margin-left: 1em;
+  text-indent: 0;
+}
+.text-html .footnotes .indent-1 {
+  margin-left: 1em;
+  text-indent: 0;
+}
+.text-html h3 + div.child-vertical-none,
+.text-html h4 + div.child-vertical-none {
+  margin-top: 1em;
+}
+.text-html h3 ~ div.child-vertical-none,
+.text-html h4 ~ div.child-vertical-none {
+  margin-bottom: 1em;
+}
+.text-html div.child-vertical-none p {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.text-html div.child-vertical-none + .top-05 {
+  margin-top: 0.5em;
+}
+.text-html div.child-vertical-none + .top-1 {
+  margin-top: 1em;
+}
+.text-html tr.top-05 td {
+  margin-top: -0.5em;
+}
+.text-html th {
+  padding-left: 0.1em;
+  text-align: left;
+  vertical-align: top;
+  font-weight: bold;
+}
+.text-html td {
+  padding-left: 0.1em;
+  text-align: left;
+  vertical-align: top;
+}
+.text-html td.indent-1 {
+  padding-left: 2em;
+  text-indent: -1em;
+}
+.text-html td.right,
+.text-html th.right {
+  text-align: right;
+}
+.text-html td.left-1.hang-1 {
+  padding-left: 2em;
+}
+.text-html td.left-1.hang-2 {
+  padding-left: 3em;
+}
+.text-html td.left-1.hang-3 {
+  padding-left: 4em;
+}
+.text-html td.left-2.hang-1 {
+  padding-left: 3em;
+}
+.text-html td.left-2.hang-2 {
+  padding-left: 4em;
+}
+.text-html td.left-2.hang-3 {
+  padding-left: 5em;
+}
+.text-html h3 {
+  /* color: #676767; */
+  color: var(--black-color);
+  letter-spacing: 0;
+  font-weight: bold;
+  font-size: 1.5rem;
+  text-transform: none;
+}
+.text-html h4 {
+  color: #000;
+  font-family: var(--sans-serif-font-family);
+  font-weight: bold;
+  font-size: 1em;
+  line-height: 24px;
+  margin-top: 1em;
+}
+.text-html h3.chapter {
+  display: block;
+} /* so that the heading toggle won't turn these off */
+.text-html h3 sup.footnote {
+  font-size: 0.71em;
+  font-weight: normal;
+}
+.text-html h3 sup.crossreference {
+  font-size: 0.9em;
+  font-weight: normal;
+}
+.text-html h2 + h2 {
+  margin-top: 0.25em;
+}
+.text-html h2 + h3,
+.text-html h3 + h3,
+.text-html h3 + h4,
+.text-html h4 + h4 {
+  margin-top: 1em;
+}
+.text-html div p {
+  text-indent: 0;
+}
+.text-html p.verse {
+  margin-top: 1em;
+  margin-bottom: 0;
+}
+.text-html span.inline-note {
+  color: #555;
+}
+.text-html sup.inline-note {
+  font-weight: bold;
+  vertical-align: text-top;
+  position: static;
+  top: auto;
+  line-height: normal;
+}
+.text-html div.poetry p.doxology {
+  margin-left: 7em;
+  text-indent: -1em;
+}
+.text-html div.poetry p.first-line-none {
+  text-indent: 0;
+}
+.text-html p.right,
+.text-html div.poetry p.right {
+  margin-left: 8em;
+  text-indent: -1em;
+}
+.text-html .center {
+  text-align: center;
+}
+.text-html span.selah {
+  font-style: italic;
+  margin-left: 2em;
+}
+.text-html span.right {
+  margin-left: 2em;
+}
+.text-html i.right {
+  margin-left: 2em;
+}
+.text-html sup {
+  font-size: 0.625em;
+  line-height: normal;
+  vertical-align: text-top;
+  top: auto;
+}
+.text-html sup a,
+.text-html .sup,
+.text-html .versenum,
+.text-html sup span,
+.text-html .versenum span {
+  vertical-align: text-top;
+}
+.text-html sup.versenum.opening {
+  vertical-align: baseline;
+  font-size: 1.6rem;
+  position: static;
+}
+.text-html.text-indent p,
+.text-html.text-indent div.left-1 p {
+  text-indent: 1em;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.text-html.text-indent p.first-line-none,
+.text-html.text-indent div.child-first-line-1 p.first-line-none,
+.text-html.text-indent div p.first-line-none,
+.text-html.text-indent div.child-first-line-none p {
+  text-indent: 0;
+}
+.text-html.text-indent div p.first-line-1,
+.text-html.text-indent div.child-first-line-1 p {
+  text-indent: 0.5em;
+}
+.text-html.text-indent div.poetry,
+.text-html.text-indent h3 + div.child-vertical-none,
+.text-html.text-indent h4 + div.child-vertical-none {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.text-html.text-indent div.left-1.poetry p {
+  text-indent: -1em;
+}
+.text-html.text-indent div.top-none,
+.text-html.text-indent p.top-none,
+.text-html.text-indent table.top-none {
+  margin-top: 0;
+}
+.text-html.text-indent div.top-05,
+.text-html.text-indent p.top-05,
+.text-html.text-indent table.top-05 {
+  margin-top: 0.5em;
+}
+.text-html.text-indent div.top-1,
+.text-html.text-indent p.top-1,
+.text-html.text-indent table.top-1,
+.text-html.text-indent div p.top-1 {
+  margin-top: 1em;
+}
+.text-html.text-indent h2,
+.text-html.text-indent h3,
+.text-html.text-indent h4 {
+  margin-top: 1em;
+  margin-bottom: 0;
+}
+.text-html.text-indent h3 {
+  font-size: 1.05em;
+}
+.text-html.text-indent h4 {
+  font-size: 1em;
+}
+.text-html.text-indent h2 + h3,
+.text-html.text-indent h3 + h3,
+.text-html.text-indent h3 + h4,
+.text-html.text-indent h4 + h4 {
+  margin-top: 0;
+}
+.text-html.text-indent p.hang-1.chapter-1,
+.text-html.text-indent p.hang-1.chapter-2,
+.text-html.text-indent p.hang-1.chapter-3 {
+  text-indent: -1em;
+}
+.text-html.text-indent p.hang-2.chapter-1,
+.text-html.text-indent p.hang-2.chapter-2,
+.text-html.text-indent p.hang-2.chapter-3 {
+  text-indent: -2em;
+}
+.text-html.text-indent p.hang-3.chapter-1,
+.text-html.text-indent p.hang-3.chapter-2,
+.text-html.text-indent p.hang-3.chapter-3 {
+  text-indent: -3em;
+}
+.text-html.text-indent p.chapter-1,
+.text-html.text-indent p.chapter-2,
+.text-html.text-indent p.chapter-3,
+.text-html.text-indent div.left-1 p.chapter-1,
+.text-html.text-indent div.left-1 p.chapter-2,
+.text-html.text-indent div.left-1 p.chapter-3,
+.text-html.text-indent p.verse {
+  text-indent: 0;
+}
+.text-html.text-indent div.left-1 p.chapter-1,
+.text-html.text-indent div.left-1 p.chapter-2,
+.text-html.text-indent div.left-1 p.chapter-3,
+.text-html.text-indent p.verse {
+  text-indent: 1em;
+}
+.text-html.text-indent div.poetry p span.chapternum,
+.text-html.text-indent div.left-1 p span.chapternum {
+  left: -57px;
+}
+.text-html.text-indent div.poetry p .versenum {
+  position: absolute;
+  margin-left: -4.8em;
+  left: auto;
+}
+.text-html.text-indent .poetry .line {
+  text-indent: 0;
+}
+.text-html span.double-underline {
+  text-decoration: underline;
+  border-bottom: 1px solid;
+}
+.text-html u.underline {
+  text-decoration: underline;
+}
+.text-html div.long-aside,
+.text-html div.short-aside {
+  background-color: #f5f3f1;
+  margin: 0 1em;
+  color: #000;
+}
+.text-html div.long-aside {
+  margin: 1em;
+  border: 1px solid #d6d2cb;
+  border-width: 1px 0;
+}
+.text-html div.long-aside :first-child {
+  margin-top: 0;
+}
+.text-html div.long-aside :last-child {
+  margin-bottom: 0;
+}
+.text-html span.gh-group {
+  display: inline-block;
+  vertical-align: top;
+  margin-right: 0.2em; /* for IE */
+  margin: 0 0.2em 0.25em 0;
+  text-indent: 0;
+}
+.text-html span.gh-group span.surface,
+.text-html span.gh-group span.lemma {
+  display: block;
+  text-align: center;
+}
+.text-html span.gh-group span.lemma {
+  color: #777;
+}
+.text-html span.gh-group.hover {
+  background-color: #fdf7df;
+  cursor: pointer;
+}
+.text-html .footnotes h4,
+.text-html .crossrefs h4 {
+  margin: 20px 0 10px;
+}
+.text-html ol {
+  padding-left: 20px;
+}
+.text-html ol,
+.text-html li {
+  list-style-type: lower-alpha;
+}
+.text-html .crossrefs ol,
+.text-html .crossrefs li {
+  list-style-type: upper-alpha;
+}
+.text-html span.father-speech {
+  color: #0b5792;
+}
+.text-html span.spirit-speech {
+  color: #dfa926;
+}
+.text-html u.father-speech {
+  text-decoration: none;
+  border-bottom: 1px solid #0b5792;
+}
+.text-html u.jesus-speech {
+  text-decoration: none;
+  border-bottom: 1px solid #b34b2b;
+}
