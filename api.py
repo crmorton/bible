@@ -1,23 +1,37 @@
-from fastapi import FastAPI, Query, Response
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
 import sqlite3
+import threading
 from pathlib import Path
 import re
 import os
 import json
 from functools import lru_cache
 from py_mini_racer.py_mini_racer import MiniRacer
+from fastapi import FastAPI, Query, Response, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 # Configuration
 DB_PATH = Path(os.getenv("DB_PATH", r"C:\Projects\_dev-workspace\__Antigravity\bible\bible_v2.db"))
 LOAD_IN_MEMORY = os.getenv("LOAD_IN_MEMORY", "false").lower() == "true"
+SHARED_MEM_URI = "file:/memdb1?vfs=memdb"
+thread_local = threading.local()
 
-# Global database connection for in-memory mode
-in_memory_conn = None
-# Global bcv parser object
-bcv_parser = None
+# Globals
+bcv_parser = None # Global bcv parser object
+memdb_keepalive = None # Global connection to keep memdb alive in each worker process
+
+
+def get_db():
+    # 2. Each thread gets its own unique connection to the SAME memory space
+    if not hasattr(thread_local, "connection"):
+        if LOAD_IN_MEMORY:
+            # Use immutable=1 and mode=ro for maximum read-only performance
+            thread_local.connection = sqlite3.connect(f"{SHARED_MEM_URI}&mode=ro&immutable=1", uri=True, check_same_thread=False)
+        else:
+            thread_local.connection = sqlite3.connect(DB_PATH, check_same_thread=False)
+        thread_local.connection.row_factory = sqlite3.Row
+    return thread_local.connection
+
 
 def init_bcv_parser():
     global bcv_parser
@@ -40,8 +54,7 @@ def init_bcv_parser():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global in_memory_conn
-    
+    global memdb_keepalive
     # Initialize JS bcv_parser
     init_bcv_parser()
 
@@ -49,16 +62,17 @@ async def lifespan(app: FastAPI):
         print(f"Loading database {DB_PATH} into memory...")
         # Connect to source and target
         source_conn = sqlite3.connect(DB_PATH)
-        in_memory_conn = sqlite3.connect(":memory:", check_same_thread=False)
+        # Use a connection to backup into the shared memory space, and keep it open
+        memdb_keepalive = sqlite3.connect(SHARED_MEM_URI, uri=True, check_same_thread=False)
         # Backup source to memory
-        source_conn.backup(in_memory_conn)
+        source_conn.backup(memdb_keepalive)
         source_conn.close()
         print("Database loaded into memory successfully.")
     
     yield
     
-    if in_memory_conn:
-        in_memory_conn.close()
+    if memdb_keepalive:
+        memdb_keepalive.close()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -164,12 +178,10 @@ def parse_ref(ref_str: str):
         return None
 
 @app.get("/translations")
-def get_translations(response: Response):
+def get_translations(response: Response, db: sqlite3.Connection = Depends(get_db)):
     # Cache translations for 24 hours at the Edge
     response.headers["Cache-Control"] = "public, max-age=86400"
-    conn = in_memory_conn if (LOAD_IN_MEMORY and in_memory_conn) else sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    cursor = db.cursor()
     
     # Get all distinct translations from verses
     cursor.execute("SELECT DISTINCT translation FROM verses ORDER BY translation;")
@@ -186,23 +198,16 @@ def get_translations(response: Response):
         info = metadata.get(abbr, {"abbreviation": abbr, "full_name": abbr})
         result.append(info)
         
-    if not (LOAD_IN_MEMORY and in_memory_conn):
-        conn.close()
     return {"translations": result}
 
 @app.get("/translations/{abbreviation}")
-def get_translation_detail(abbreviation: str, response: Response):
+def get_translation_detail(abbreviation: str, response: Response, db: sqlite3.Connection = Depends(get_db)):
     response.headers["Cache-Control"] = "public, max-age=86400"
-    conn = in_memory_conn if (LOAD_IN_MEMORY and in_memory_conn) else sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    cursor = db.cursor()
     
     cursor.execute("SELECT * FROM translations WHERE abbreviation = ?", (abbreviation,))
     row = cursor.fetchone()
     
-    if not (LOAD_IN_MEMORY and in_memory_conn):
-        conn.close()
-        
     if not row:
         return {"error": "Translation metadata not found."}
         
@@ -219,7 +224,8 @@ def parse_tag(tag_str):
 @app.get("/passage")
 def get_passage(response: Response,
                 ref: str = Query(..., description="Bible passage reference, e.g., 'Matthew 4:1-11'"),
-                translation: str = Query("MSG", description="Translation acronym, e.g., 'MSG'")):
+                translation: str = Query("MSG", description="Translation acronym, e.g., 'MSG'"),
+                db: sqlite3.Connection = Depends(get_db)):
     # Cache passage for 24 hours at the Edge (Cloudflare)
     response.headers["Cache-Control"] = "public, max-age=86400"
     
@@ -230,9 +236,7 @@ def get_passage(response: Response,
     c_start, v_start = parsed["c_start"], parsed["v_start"]
     c_end, v_end = parsed["c_end"], parsed["v_end"]
     
-    conn = in_memory_conn if (LOAD_IN_MEMORY and in_memory_conn) else sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    cursor = db.cursor()
     
     # Optimized range query
     # Branches:
@@ -265,8 +269,6 @@ def get_passage(response: Response,
     })
     
     rows = cursor.fetchall()
-    if not (LOAD_IN_MEMORY and in_memory_conn):
-        conn.close()
     
     if not rows:
         return {"html": "<p>No verses found for this reference and translation.</p>"}
@@ -396,4 +398,6 @@ def get_passage(response: Response,
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # Note: Multi-worker uvicorn is unstable on Windows via python script.
+    # 1 worker + async handling is plenty for an in-memory SQLite DB.
+    uvicorn.run("api:app", host="0.0.0.0", port=port, workers=5)

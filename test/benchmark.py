@@ -7,7 +7,7 @@ from urllib.parse import quote
 import concurrent.futures
 
 # --- Configuration ---
-API_BASE_URL = "http://localhost:8000/passage"
+API_BASE_URL = "http://localhost:9091/passage"
 CSV_FILE = "./test/bible_passages_sample.csv"  # has  1,648 rows
 CSV_FILE = "./test/bible_passages_sample2.csv" # has 20,089 rows
 TRANSLATION = "LEB"

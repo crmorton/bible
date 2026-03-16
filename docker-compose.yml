@@ -4,7 +4,7 @@ services:
   bible-api:
     build: .
     ports:
-      - "8000:8000"
+      - "9091:8000"
     environment:
       - DB_PATH=/app/data/bible.db
       - LOAD_IN_MEMORY=true
