@@ -1,0 +1,69 @@
+========================================
+         BENCHMARK RESULTS (1)
+========================================
+Total Requests:      1648
+Successful:          1648
+Failed:              0
+Total Elapsed Time:  23.88 seconds
+Throughput:          69.02 req/sec
+
+--- Response Time Metrics (Successes) ---
+Average Latency:     0.0144 seconds
+Median Latency:      0.0155 seconds
+Min Latency:         0.0024 seconds
+Max Latency:         0.0314 seconds
+========================================
+
+---
+
+========================================
+         BENCHMARK RESULTS (5)
+========================================
+Total Requests:      1648
+Successful:          1648
+Failed:              0
+Total Elapsed Time:  6.02 seconds
+Throughput:          273.66 req/sec
+
+--- Response Time Metrics (Successes) ---
+Average Latency:     0.0181 seconds
+Median Latency:      0.0146 seconds
+Min Latency:         0.0021 seconds
+Max Latency:         0.0728 seconds
+========================================
+
+---
+
+========================================
+         BENCHMARK RESULTS (10)
+========================================
+Total Requests:      1648
+Successful:          1648
+Failed:              0
+Total Elapsed Time:  30.72 seconds
+Throughput:          53.64 req/sec
+
+--- Response Time Metrics (Successes) ---
+Average Latency:     0.1861 seconds
+Median Latency:      0.1347 seconds
+Min Latency:         0.0084 seconds
+Max Latency:         2.9142 seconds
+========================================
+
+---
+
+========================================
+         BENCHMARK RESULTS (20)
+========================================
+Total Requests:      1648
+Successful:          1648
+Failed:              0
+Total Elapsed Time:  32.00 seconds
+Throughput:          51.51 req/sec
+
+--- Response Time Metrics (Successes) ---
+Average Latency:     0.3866 seconds
+Median Latency:      0.2731 seconds
+Min Latency:         0.0247 seconds
+Max Latency:         6.1489 seconds
+========================================

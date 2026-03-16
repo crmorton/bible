@@ -11,4 +11,5 @@ services:
       - PORT=8000
     volumes:
       - ./bible_v2.db:/app/data/bible.db:ro
+    command: ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "5"]
     restart: unless-stopped
