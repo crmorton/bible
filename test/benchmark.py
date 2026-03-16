@@ -4,24 +4,38 @@ import requests
 from requests.adapters import HTTPAdapter
 import statistics
 from urllib.parse import quote
+from urllib3.util.retry import Retry
 import concurrent.futures
 
 # --- Configuration ---
-API_BASE_URL = "http://localhost:9091/passage"
+API_BASE_URL = "http://localhost:8000/passage"          # When run locally, use CONCURRENT_REQUESTS=25 and WORKERS=5
+API_BASE_URL = "http://bible.homelab.internal/passage"  # When run on a networked machine (i7-8700 @ 1gbps w/ WORKERS=5), use CONCURRENT_REQUESTS=50 (1228 req/sec and 99.5%)
+API_BASE_URL = "http://192.168.1.199:9091/passage"
 CSV_FILE = "./test/bible_passages_sample.csv"  # has  1,648 rows
 CSV_FILE = "./test/bible_passages_sample2.csv" # has 20,089 rows
 TRANSLATION = "LEB"
 
 # Set to 1 for sequential testing, or higher (e.g., 5-20) to stress-test concurrency
-CONCURRENT_REQUESTS = 25 # This is the sweet-spot with 5 Uvicorn workers
+CONCURRENT_REQUESTS = 50 # This is the sweet-spot with 5 Uvicorn workers
 ITERATIONS = 1  # Will multiply the XX,XXX rows by 6
+MAX_RETRIES = 3 # Number of retries for failed requests
 
 # --- Setup Connection Pooling ---
 # This tells Python to keep connections open and reuse them
 session = requests.Session()
+
+# Configure retry strategy
+retry_strategy = Retry(
+    total=MAX_RETRIES,
+    backoff_factor=0.1,  # Wait 0.1s, 0.2s, 0.4s between retries
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["GET"]
+)
+
 adapter = HTTPAdapter(
     pool_connections=CONCURRENT_REQUESTS, 
-    pool_maxsize=CONCURRENT_REQUESTS
+    pool_maxsize=CONCURRENT_REQUESTS,
+    max_retries=retry_strategy
 )
 session.mount('http://', adapter)
 session.mount('https://', adapter)
@@ -54,7 +68,7 @@ def fetch_passage(osis_ref):
     try:
         # Use the global session instead of requests.get
         # response = requests.get(url, timeout=30)
-        response = session.get(url, timeout=30)
+        response = session.get(url, timeout=3)
         response.raise_for_status() # Raise exception for 4xx/5xx status codes
         
         # Parse JSON and verify the structure matches expectations
@@ -98,7 +112,7 @@ def run_benchmark(refs):
             results.append(result)
             
             # Print progress every 200 requests or on the last request
-            if count % 200 == 0 or count == len(refs):
+            if count % 500 == 0 or count == len(refs):
                 print(f"Progress: {count}/{len(refs)} requests completed...")
 
     total_duration = time.time() - start_total
