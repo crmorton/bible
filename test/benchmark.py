@@ -9,7 +9,7 @@ import concurrent.futures
 
 # --- Configuration ---
 API_BASE_URL = "http://localhost:8000/passage"          # When run locally, use CONCURRENT_REQUESTS=25 and WORKERS=5
-API_BASE_URL = "http://bible.homelab.internal/passage"  # When run on a networked machine (i7-8700 @ 1gbps w/ WORKERS=5), use CONCURRENT_REQUESTS=50 (1228 req/sec and 99.5%)
+API_BASE_URL = "http://bible.homelab.internal/passage"  # When run on a networked machine (i7-8700 @ 1gbps w/ WORKERS=5), use CONCURRENT_REQUESTS=50 (1228 req/sec and 99.5% success), system performance is 35% CPU, 768MB RAM, 35Mbps Network Send
 API_BASE_URL = "http://192.168.1.199:9091/passage"
 CSV_FILE = "./test/bible_passages_sample.csv"  # has  1,648 rows
 CSV_FILE = "./test/bible_passages_sample2.csv" # has 20,089 rows
@@ -17,7 +17,7 @@ TRANSLATION = "LEB"
 
 # Set to 1 for sequential testing, or higher (e.g., 5-20) to stress-test concurrency
 CONCURRENT_REQUESTS = 50 # This is the sweet-spot with 5 Uvicorn workers
-ITERATIONS = 1  # Will multiply the XX,XXX rows by 6
+ITERATIONS = 25  # Will multiply the XX,XXX rows by 6
 MAX_RETRIES = 3 # Number of retries for failed requests
 
 # --- Setup Connection Pooling ---

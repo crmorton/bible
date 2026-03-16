@@ -23,6 +23,8 @@ This method uses **WinSW** (Windows Service Wrapper) to run the Python server di
 
    *Note: The service is configured to use the `.venv` in the parent directory of `dist\`.*
 
+> **Performance:** When run on a networked machine (i7-8700 @ 1gbps w/ WORKERS=5), use CONCURRENT_REQUESTS=50 (1228 req/sec and 99.5% success), system performance is 35% CPU, 768MB RAM, 35Mbps Network Send
+
 ## Method 2: Task Scheduler
 
 Build with `pyinstaller` using:
