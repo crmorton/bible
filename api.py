@@ -168,13 +168,45 @@ def get_translations(response: Response):
     # Cache translations for 24 hours at the Edge
     response.headers["Cache-Control"] = "public, max-age=86400"
     conn = in_memory_conn if (LOAD_IN_MEMORY and in_memory_conn) else sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
+    
+    # Get all distinct translations from verses
     cursor.execute("SELECT DISTINCT translation FROM verses ORDER BY translation;")
-    rows = cursor.fetchall()
-    translations = [row[0] for row in rows]
+    v_rows = cursor.fetchall()
+    active_translations = [row[0] for row in v_rows]
+    
+    # Get metadata from translations table
+    cursor.execute("SELECT * FROM translations ORDER BY abbreviation;")
+    t_rows = cursor.fetchall()
+    metadata = {row['abbreviation']: dict(row) for row in t_rows}
+    
+    result = []
+    for abbr in active_translations:
+        info = metadata.get(abbr, {"abbreviation": abbr, "full_name": abbr})
+        result.append(info)
+        
     if not (LOAD_IN_MEMORY and in_memory_conn):
         conn.close()
-    return {"translations": translations}
+    return {"translations": result}
+
+@app.get("/translations/{abbreviation}")
+def get_translation_detail(abbreviation: str, response: Response):
+    response.headers["Cache-Control"] = "public, max-age=86400"
+    conn = in_memory_conn if (LOAD_IN_MEMORY and in_memory_conn) else sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM translations WHERE abbreviation = ?", (abbreviation,))
+    row = cursor.fetchone()
+    
+    if not (LOAD_IN_MEMORY and in_memory_conn):
+        conn.close()
+        
+    if not row:
+        return {"error": "Translation metadata not found."}
+        
+    return dict(row)
 
 def parse_tag(tag_str):
     # tag_str like "div.poetry" or "p"
