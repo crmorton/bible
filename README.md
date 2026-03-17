@@ -63,13 +63,13 @@ python scrape_translations.py --db-path ./bible_v2.db --limit 50
 This repository includes a benchmark tool that hits `GET /passage` in parallel.
 
 ```powershell
-python -m bible_api.benchmark --csv ./test/bible_passages_sample2.csv --url http://localhost:9091/passage --translation LEB --concurrency 25
+python -m bible_api.benchmark --csv ./tests/data/bible_passages_sample2.csv --url http://localhost:9091/passage --translation LEB --concurrency 25
 ```
 
 Or, if installed as a console script:
 
 ```powershell
-bible-api-benchmark --csv ./test/bible_passages_sample2.csv
+bible-api-benchmark --csv ./tests/data/bible_passages_sample2.csv
 ```
 
 ## 🧩 Batch Enrichment (Postgres)
