@@ -11,4 +11,7 @@ LOAD_IN_MEMORY = os.getenv("LOAD_IN_MEMORY", "false").lower() == "true"
 SHARED_MEM_URI = "file:/memdb1?vfs=memdb"
 
 # Default server port (used by the built-in run scripts)
-DEFAULT_PORT = int(os.getenv("PORT", "8000"))
+DEFAULT_PORT = int(os.getenv("PORT", "9091"))
+
+# Uvicorn worker count
+WEB_CONCURRENCY = int(os.getenv("WEB_CONCURRENCY", "1"))

@@ -166,9 +166,15 @@ def create_app() -> FastAPI:
 
 def main():
     import uvicorn
-    from .config import DEFAULT_PORT
+    from .config import DEFAULT_PORT, WEB_CONCURRENCY
 
-    uvicorn.run("bible_api.api:create_app()", host="0.0.0.0", port=DEFAULT_PORT)
+    uvicorn.run(
+        "bible_api.api:create_app",
+        host="0.0.0.0",
+        port=DEFAULT_PORT,
+        factory=True,
+        workers=WEB_CONCURRENCY
+    )
 
 
 if __name__ == "__main__":

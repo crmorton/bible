@@ -9,13 +9,16 @@ This module is designed to be run as a script via:
 import csv
 import time
 import statistics
+import logging
 from urllib.parse import quote
 
 try:
     import requests
     from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
 except ImportError:  # pragma: no cover
     requests = None
+    Retry = None
 
 
 def load_references(filename):
@@ -37,7 +40,7 @@ def fetch_passage(api_base_url, osis_ref, translation, session):
     error_msg = None
 
     try:
-        response = session.get(url, timeout=30)
+        response = session.get(url, timeout=5)
         response.raise_for_status()
 
         data = response.json()
@@ -61,8 +64,24 @@ def run_benchmark(
     if requests is None:
         raise RuntimeError("requests is required to run the benchmark. Install it via pip.")
 
+    # Suppress retry warnings from urllib3
+    logging.getLogger("urllib3").setLevel(logging.ERROR)
+
     session = requests.Session()
-    adapter = HTTPAdapter(pool_connections=concurrent_requests, pool_maxsize=concurrent_requests)
+    
+    # Configure retry strategy
+    retry_strategy = Retry(
+        total=3,
+        backoff_factor=0.1,  # Wait 0.1s, 0.2s, 0.4s between retries
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["GET"]
+    )
+
+    adapter = HTTPAdapter(
+        pool_connections=concurrent_requests, 
+        pool_maxsize=concurrent_requests,
+        max_retries=retry_strategy
+    )
     session.mount('http://', adapter)
     session.mount('https://', adapter)
 
@@ -75,7 +94,7 @@ def run_benchmark(
         futures = {executor.submit(fetch_passage, api_base_url, ref, translation, session): ref for ref in references}
         for count, future in enumerate(as_completed(futures), 1):
             results.append(future.result())
-            if count % 200 == 0 or count == len(references):
+            if count % 500 == 0 or count == len(references):
                 print(f"Progress: {count}/{len(references)} requests completed...")
 
     total_duration = time.time() - start_total
@@ -116,7 +135,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Benchmark the Bible API.")
-    parser.add_argument("--csv", default="./test/bible_passages_sample2.csv", help="CSV file of OSIS refs")
+    parser.add_argument("--csv", default="./tests/data/bible_passages_sample2.csv", help="CSV file of OSIS refs")
     parser.add_argument("--url", default="http://localhost:9091/passage", help="API base URL")
     parser.add_argument("--translation", default="LEB", help="Translation acronym")
     parser.add_argument("--concurrency", type=int, default=25, help="Number of concurrent requests")
