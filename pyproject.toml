@@ -1,0 +1,40 @@
+[project]
+name = "bible-api"
+version = "0.1.0"
+description = "A Bible passage API with HTML rendering and UI, using FastAPI and SQLite."
+authors = [
+  {name = "", email = ""}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "pydantic-settings",
+  "py-mini-racer",
+  "requests",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+# Run the API server
+bible-api = "bible_api.api:main"
+
+# Benchmark runner
+bible-api-benchmark = "bible_api.benchmark:main"
+
+# Batch enrichment runner
+bible-api-enrich = "bible_api.batch_enrichment:main"
+
+# Data ingestion / scraping helpers
+bible-ingest = "scripts.ingest_html:main"
+bible-scrape = "scripts.scrape_translations:main"
+bible-setup = "scripts.setup_env:main"

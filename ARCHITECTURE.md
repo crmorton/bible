@@ -66,10 +66,10 @@ During development, we evaluated whether to use the original HTML files with XSL
 The API provides the HTML shards for the frontend.
 ```powershell
 # Activate the virtual environment
-& c:/Projects/_dev-workspace/__Antigravity/bible/.venv/Scripts/Activate.ps1
+& .venv/Scripts/Activate.ps1
 
 # Run the API server
-python api.py
+python -m bible_api.api
 ```
 *Test the application locally at:* `http://127.0.0.1:8000/passage?ref=Matthew%204:1-11&translation=LEB`
 
@@ -86,7 +86,7 @@ docker-compose up --build
 If the source HTML files change, or if rendering logic requires new metadata, re-run the ingestion pipeline. It will drop the existing `verses` table and re-populate the millions of rows from scratch.
 ```powershell
 # Activate the virtual environment
-& c:/Projects/_dev-workspace/__Antigravity/bible/.venv/Scripts/Activate.ps1
+& .venv/Scripts/Activate.ps1
 
 # Run the ingestion script
 python ingest_html.py

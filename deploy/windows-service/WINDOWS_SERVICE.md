@@ -28,5 +28,3 @@ bible_v2.db
 ```
 
 Import `bible_server_task.xml` into Task Scheduler.
-
-> **When run on a networked machine (i7-8700 @ 1gbps w/ WORKERS=5), use CONCURRENT_REQUESTS=50 (1228 req/sec and 99.5% successful)**

@@ -42,6 +42,7 @@ if /i "%LOG_TO_FILE%"=="true" (
 )
 
 REM Run Uvicorn directly. Using --workers for high throughput.
+if not DEFINED IS_MINIMIZED set IS_MINIMIZED=1 && start "" /min "%~0" %* && exit
 if /i "%LOG_TO_FILE%"=="true" (
   "%PYTHON%" -m uvicorn api:app --host 0.0.0.0 --port %PORT% --workers %WORKERS% --log-level info >> "%LOGFILE%" 2>&1
 ) else (
