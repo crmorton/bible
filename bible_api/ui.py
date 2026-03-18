@@ -174,7 +174,7 @@ def build_translations_ui_page() -> str:
     )
 
     extra_head = (
-        "<link rel=\"stylesheet\" href=\"/bible-gateway/base.css\">"
-        "<link rel=\"stylesheet\" href=\"/bible-gateway/passage-text.css\">"
+        "<link rel=\"stylesheet\" href=\"/static/base.css\">"
+        "<link rel=\"stylesheet\" href=\"/static/passage-text.css\">"
     )
     return _wrap_html_page("Bible Explorer", body, extra_head=extra_head)

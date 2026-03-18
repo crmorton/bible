@@ -2,13 +2,12 @@
   <id>BibleAPI</id>
   <name>Bible API Server</name>
   <description>High-performance read-only Bible API server using SQLite in-memory.</description>
-  <executable>%BASE%\..\.venv\Scripts\python.exe</executable>
-  <argument>%BASE%\..\api.py</argument>
+  <executable>%BASE%\..\..\.venv\Scripts\python.exe</executable>
+  <argument>%BASE%\..\..\api.py</argument>
   <workingdirectory>%BASE%\..</workingdirectory>
   
   <env name="PORT" value="9091" />
-  <env name="DB_PATH" value="p:\services\bible\bible_v2.db" />
-  <env name="LOAD_IN_MEMORY" value="true" />
+  <env name="WEB_CONCURRENCY" value="3" />
   
   <log mode="roll"></log>
   

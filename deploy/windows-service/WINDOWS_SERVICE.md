@@ -30,7 +30,7 @@ This method uses **WinSW** (Windows Service Wrapper) to run the Python server di
 Build with `pyinstaller` using:
 
 ``` bash
-pyinstaller --onefile --name bible_server --add-data "en_bcv_parser.js;." api.py
+pyinstaller --onefile --name bible_server --add-data "bible_api/static/en_bcv_parser.js;." api.py
 ```
 
 Create a Windows startup wrapper:

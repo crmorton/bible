@@ -1,5 +1,7 @@
 """FastAPI application and routes."""
 
+from pathlib import Path
+
 from fastapi import FastAPI, Query, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -20,8 +22,12 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Serve scraped static assets (CSS/HTML) so the UI matches the old index page.
-    app.mount("/bible-gateway", StaticFiles(directory="bible-gateway"), name="bible-gateway")
+    # Serve static assets (CSS/JS) packaged with the python package.
+    # Use a stable path based on the package location so it works no matter the current working directory.
+    static_dir = Path(__file__).resolve().parent / "static"
+    if not static_dir.exists():
+        raise RuntimeError(f"Directory '{static_dir}' does not exist")
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     @app.get("/", response_class=Response)
     def ui_page():

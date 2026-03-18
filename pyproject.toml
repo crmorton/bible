@@ -38,3 +38,9 @@ bible-api-enrich = "bible_api.batch_enrichment:main"
 bible-ingest = "scripts.ingest_html:main"
 bible-scrape = "scripts.scrape_translations:main"
 bible-setup = "scripts.setup_env:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"bible_api" = ["static/*"]
