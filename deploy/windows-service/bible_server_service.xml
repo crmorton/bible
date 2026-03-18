@@ -6,7 +6,7 @@
   <argument>%BASE%\..\..\api.py</argument>
   <workingdirectory>%BASE%\..</workingdirectory>
   
-  <env name="PORT" value="9091" />
+  <env name="PORT" value="7777" />
   <env name="WEB_CONCURRENCY" value="3" />
   
   <log mode="roll"></log>

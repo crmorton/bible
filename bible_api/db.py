@@ -34,7 +34,7 @@ def init_bcv_parser():
     if _bcv_parser is not None:
         return _bcv_parser
 
-    js_path = Path("en_bcv_parser.js")
+    js_path = Path(__file__).resolve().parent / "static" / "en_bcv_parser.js"
     if js_path.exists():
         from py_mini_racer.py_mini_racer import MiniRacer
 
