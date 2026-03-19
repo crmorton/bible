@@ -14,4 +14,4 @@ SHARED_MEM_URI = "file:/memdb1?vfs=memdb"
 DEFAULT_PORT = int(os.getenv("PORT", "9091"))
 
 # Uvicorn worker count
-WEB_CONCURRENCY = int(os.getenv("WEB_CONCURRENCY", "1"))
+WEB_CONCURRENCY = int(os.getenv("WEB_CONCURRENCY", "3"))

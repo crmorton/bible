@@ -179,6 +179,7 @@ def create_app() -> FastAPI:
     def get_passage(response: Response,
                     ref: str = Query(..., description="Bible passage reference, e.g., 'Matthew 4:1-11'"),
                     translation: str = Query("MSG", description="Translation acronym, e.g., 'MSG'"),
+                    psalter: bool = Query(False, description="Use Scottish Psalter for Psalms"),
                     db=Depends(get_db)):
         response.headers["Cache-Control"] = "public, max-age=86400"
 
@@ -187,34 +188,45 @@ def create_app() -> FastAPI:
             return {"error": "Invalid reference format. Use e.g. 'Matthew 4:1-11'"}
 
         cursor = db.cursor()
-        c_start, v_start, c_end, v_end = parsed["c_start"], parsed["v_start"], parsed["c_end"], parsed["v_end"]
+        all_blocks = []
 
-        query = '''
-            SELECT * FROM verses 
-            WHERE translation = :translation 
-              AND book = :book 
-              AND (
-                (chapter = :c_start AND chapter = :c_end AND verse_start <= :v_end AND verse_end >= :v_start)
-                OR
-                (chapter = :c_start AND :c_start < :c_end AND verse_end >= :v_start)
-                OR
-                (chapter = :c_end AND :c_start < :c_end AND verse_start <= :v_end)
-                OR
-                (chapter > :c_start AND chapter < :c_end)
-              )
-            ORDER BY chapter, verse_start ASC
-        '''
-        cursor.execute(query, {
-            "translation": translation,
-            "book": parsed["book"],
-            "c_start": c_start,
-            "c_end": c_end,
-            "v_start": v_start,
-            "v_end": v_end,
-        })
+        for parsed in parsed_list:
+            c_start, v_start, c_end, v_end = parsed["c_start"], parsed["v_start"], parsed["c_end"], parsed["v_end"]
+            book_code = parsed["book"]
+            book_name = OSIS_BOOKS.get(book_code, book_code)
 
-        rows = cursor.fetchall()
-        if rows:
+            table_name = "verses"
+            query_translation = translation
+            if psalter and book_name == "Psalms":
+                table_name = "psalter_verses"
+                query_translation = "ScottishPsalter"
+
+            query = f'''
+                SELECT * FROM {table_name} 
+                WHERE translation = :translation 
+                  AND book = :book 
+                  AND (
+                    (chapter = :c_start AND chapter = :c_end AND verse_start <= :v_end AND verse_end >= :v_start)
+                    OR
+                    (chapter = :c_start AND :c_start < :c_end AND verse_end >= :v_start)
+                    OR
+                    (chapter = :c_end AND :c_start < :c_end AND verse_start <= :v_end)
+                    OR
+                    (chapter > :c_start AND chapter < :c_end)
+                  )
+                ORDER BY chapter, verse_start ASC
+            '''
+            cursor.execute(query, {
+                "translation": query_translation,
+                "book": book_code, # Use the OSIS code for the 'book' column in DB
+                "c_start": c_start,
+                "c_end": c_end,
+                "v_start": v_start,
+                "v_end": v_end,
+            })
+
+            rows = cursor.fetchall()
+            if rows:
                 rendered = render_passage_html(rows, query_translation if not psalter else "ScottishPsalter")
                 osis = parsed.get("osis", "")
                 ref_label = format_osis_ref(osis)

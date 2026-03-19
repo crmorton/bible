@@ -18,9 +18,12 @@ def render_passage_html(rows, translation):
     current_path_tags = []
     current_para_md5 = None
 
+    last_headers = {"h0": None, "h2": None, "h3": None, "h4": None}
+
     rendered_chapter = None
     rendered_verse = None
     is_first_span_in_para = True
+    is_first_p = True
 
     for row in rows:
         book_db = row['book']
@@ -28,18 +31,70 @@ def render_passage_html(rows, translation):
         v_start_db = row['verse_start']
         v_end_db = row['verse_end']
         h3, h2, h4, h0 = row['h3'], row['h2'], row['h4'], row['h0']
-        header_text = h3 or h2 or h4 or h0
+        path = row['path'] or ""
+        class_attr = row['class_attr'] or ""
+        span_text = row['span_text'] or ""
+        span_id = row['span_id'] or ""
+        para_md5 = row['para_md5']
 
-        if header_text:
+        # Reset headers if chapter changes to ensure they reappear if needed (though usually they only appear at start)
+        if rendered_chapter is not None and chapter_db != rendered_chapter:
+            last_headers = {"h0": None, "h2": None, "h3": None, "h4": None}
+
+        # Identify NEW headers in this row
+        new_headers = []
+        for h_key in ["h0", "h2", "h3", "h4"]:
+            h_val = row[h_key]
+            if h_val and h_val != last_headers[h_key]:
+                # PREFERENCE: If the path already contains this header tag (e.g. h4.title),
+                # we skip rendering the column-based header to avoid duplication.
+                tag_type = h_key if h_key != "h0" else "h1"
+                header_in_path = (path == tag_type or path.startswith(f"{tag_type}.") or 
+                                 f"->{tag_type}." in path or f"->{tag_type}->" in path or path.endswith(f"->{tag_type}"))
+                if header_in_path:
+                    last_headers[h_key] = h_val
+                    continue
+
+                new_headers.append((h_key, h_val))
+                last_headers[h_key] = h_val
+
+        if new_headers:
             while current_path_tags:
                 res_html.append(current_path_tags.pop()[1])
             current_para_md5 = None
+            
+            if len(new_headers) > 1:
+                res_html.append('<hgroup style="margin-top: 20px; margin-bottom: 15px;">')
+            
+            for h_tag, h_val in new_headers:
+                tag = h_tag if h_tag != "h0" else "h1"
+                h_class = ' class="canto"' if h_tag == "h4" and translation == "ScottishPsalter" else ""
+                style = ' style="margin-top: 20px; margin-bottom: 10px;"' if len(new_headers) == 1 else ""
+                res_html.append(f'<{tag}{h_class}{style}>{h_val}</{tag}>')
+                
+            if len(new_headers) > 1:
+                res_html.append('</hgroup>')
 
         path = row['path']
         class_attr = row['class_attr']
-        span_text = row['span_text'] or header_text
+        span_text = row['span_text'] or ""
         span_id = row['span_id'] or ""
         para_md5 = row['para_md5']
+
+        # Determine if this row is JUST a title (to avoid duplication in standard translations)
+        is_title_row = False
+        # If the path itself is a header, then this span IS the header, so we always render it.
+        # However, column headers like h3/h4 are often duplicates of what's in span_text.
+        path_is_header = any(h in path for h in ["h0", "h1", "h2", "h3", "h4"])
+        if span_text and not path_is_header:
+            for h_val in last_headers.values():
+                if h_val == span_text:
+                    is_title_row = True
+                    break
+        
+        if is_title_row:
+            # Skip rendering the span if it just repeats a header
+            continue
 
         target_tags = path.split('->') if path else []
 
@@ -85,18 +140,18 @@ def render_passage_html(rows, translation):
 
         span_id_attr = f' id="{span_id}"' if span_id else ""
 
-        is_header = bool(header_text) or any(h in path for h in ['h1', 'h2', 'h3', 'h4'])
-
         prefix = ""
-        if not is_header and (chapter_db != rendered_chapter or v_start_db != rendered_verse):
-            rendered_chapter = chapter_db
-            rendered_verse = v_start_db
-            verse_label = str(v_start_db) if v_start_db == v_end_db else f"{v_start_db}-{v_end_db}"
+        # Number the FIRST non-title row of the verse/chapter
+        if not path_is_header:
+            if (chapter_db != rendered_chapter or v_start_db != rendered_verse):
+                rendered_chapter = chapter_db
+                rendered_verse = v_start_db
+                verse_label = str(v_start_db) if v_start_db == v_end_db else f"{v_start_db}-{v_end_db}"
 
-            if v_start_db == 1:
-                prefix = f'<span class="chapternum" style="float: left; padding-right: 6px;">{chapter_db}</span>'
-            else:
-                prefix = f'<sup class="versenum">{verse_label} </sup>'
+                if v_start_db == 1:
+                    prefix = f'<span class="chapternum">{chapter_db}&nbsp;</span>'
+                else:
+                    prefix = f'<sup class="versenum">{verse_label} </sup>'
 
         span_html = f"<span{span_id_attr} class=\"{class_attr}\">{prefix}{span_text}</span>"
         res_html.append(span_html)

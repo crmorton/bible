@@ -111,11 +111,11 @@ def parse_ref(ref_str: str):
         for entity in entities:
             results.append({
                 "osis": entity.get("osis"),
-            "book": entity["start"]["b"],
-            "c_start": entity["start"]["c"],
-            "v_start": entity["start"]["v"],
-            "c_end": entity["end"]["c"],
-            "v_end": entity["end"]["v"],
+                "book": entity["start"]["b"],
+                "c_start": entity["start"]["c"],
+                "v_start": entity["start"]["v"],
+                "c_end": entity["end"]["c"],
+                "v_end": entity["end"]["v"],
             })
 
         return results
