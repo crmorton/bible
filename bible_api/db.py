@@ -91,25 +91,36 @@ def parse_ref(ref_str: str):
         else:
             end_entity = start_entity.copy()
 
-        return {
+        return [{
+            "osis": ref_text,
             "book": start_entity["b"],
             "c_start": start_entity["c"],
             "v_start": start_entity["v"] if start_entity["v"] is not None else 1,
             "c_end": end_entity["c"],
             "v_end": end_entity["v"] if end_entity["v"] is not None else 999,
-        }
+        }]
+
+
 
     try:
         entities = parse_ref_cached(ref_str)
         if not entities:
-            return None
-        entity = entities[0]
-        return {
+            return []
+        
+        results = []
+        for entity in entities:
+            results.append({
+                "osis": entity.get("osis"),
             "book": entity["start"]["b"],
             "c_start": entity["start"]["c"],
             "v_start": entity["start"]["v"],
             "c_end": entity["end"]["c"],
             "v_end": entity["end"]["v"],
-        }
+            })
+
+        return results
     except Exception:
-        return None
+        return []
+
+
+

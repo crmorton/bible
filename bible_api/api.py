@@ -11,6 +11,59 @@ from .db import get_db, parse_ref
 from .passage import render_passage_html
 from .ui import build_api_info_page, build_translations_ui_page, _wrap_html_page
 
+OSIS_BOOKS = {
+    "Gen": "Genesis", "Exod": "Exodus", "Lev": "Leviticus", "Num": "Numbers", "Deut": "Deuteronomy",
+    "Josh": "Joshua", "Judg": "Judges", "Ruth": "Ruth", "1Sam": "1 Samuel", "2Sam": "2 Samuel",
+    "1Kgs": "1 Kings", "2Kgs": "2 Kings", "1Chr": "1 Chronicles", "2Chr": "2 Chronicles",
+    "Ezra": "Ezra", "Neh": "Nehemiah", "Esth": "Esther", "Job": "Job", "Ps": "Psalms",
+    "Prov": "Proverbs", "Eccl": "Ecclesiastes", "Song": "Song of Solomon", "Isa": "Isaiah",
+    "Jer": "Jeremiah", "Lam": "Lamentations", "Ezek": "Ezekiel", "Dan": "Daniel",
+    "Hos": "Hosea", "Joel": "Joel", "Amos": "Amos", "Obad": "Obadiah", "Jonah": "Jonah",
+    "Mic": "Micah", "Nah": "Nahum", "Hab": "Habakkuk", "Zeph": "Zephaniah", "Hag": "Haggai",
+    "Zech": "Zechariah", "Mal": "Malachi", "Matt": "Matthew", "Mark": "Mark", "Luke": "Luke",
+    "John": "John", "Acts": "Acts", "Rom": "Romans", "1Cor": "1 Corinthians", "2Cor": "2 Corinthians",
+    "Gal": "Galatians", "Eph": "Ephesians", "Phil": "Philippians", "Col": "Colossians",
+    "1Thess": "1 Thessalonians", "2Thess": "2 Thessalonians", "1Tim": "1 Timothy", "2Tim": "2 Timothy",
+    "Titus": "Titus", "Phlm": "Philemon", "Heb": "Hebrews", "Jas": "James", "1Pet": "1 Peter",
+    "2Pet": "2 Peter", "1John": "1 John", "2John": "2 John", "3John": "3 John", "Jude": "Jude",
+    "Rev": "Revelation"
+}
+
+
+def format_osis_ref(osis_str: str) -> str:
+    """Convert OSIS reference (e.g. 'Matt.5.17-Matt.5.18') to human-readable format."""
+    if not osis_str:
+        return ""
+
+    parts = osis_str.split("-")
+
+    def parse_part(part):
+        bits = part.split(".")
+        book = OSIS_BOOKS.get(bits[0], bits[0])
+        chapter = int(bits[1]) if len(bits) > 1 else None
+        verse = int(bits[2]) if len(bits) > 2 else None
+        return book, chapter, verse
+
+    try:
+        b1, c1, v1 = parse_part(parts[0])
+        if len(parts) == 1:
+            if c1 is None: return b1
+            if v1 is None: return f"{b1} {c1}"
+            return f"{b1} {c1}:{v1}"
+
+        b2, c2, v2 = parse_part(parts[1])
+
+        if b1 == b2:
+            if c1 == c2:
+                if v1 == v2:
+                    return f"{b1} {c1}:{v1}"
+                return f"{b1} {c1}:{v1}-{v2}"
+            return f"{b1} {c1}:{v1}-{c2}:{v2}"
+        return f"{b1} {c1}:{v1} - {b2} {c2}:{v2}"
+    except Exception:
+        return osis_str
+
+
 
 def create_app() -> FastAPI:
     app = FastAPI()
@@ -129,8 +182,8 @@ def create_app() -> FastAPI:
                     db=Depends(get_db)):
         response.headers["Cache-Control"] = "public, max-age=86400"
 
-        parsed = parse_ref(ref)
-        if not parsed:
+        parsed_list = parse_ref(ref)
+        if not parsed_list:
             return {"error": "Invalid reference format. Use e.g. 'Matthew 4:1-11'"}
 
         cursor = db.cursor()
@@ -161,11 +214,23 @@ def create_app() -> FastAPI:
         })
 
         rows = cursor.fetchall()
-        if not rows:
+        if rows:
+                rendered = render_passage_html(rows, query_translation if not psalter else "ScottishPsalter")
+                osis = parsed.get("osis", "")
+                ref_label = format_osis_ref(osis)
+                if ref_label:
+                    suffix = " (Scottish Psalter)" if psalter and book_name == "Psalms" else ""
+                    rendered += f'<p style="text-align: right; font-style: italic; margin-top: 10px; opacity: 0.8;">— {ref_label}{suffix}</p>'
+                all_blocks.append(rendered)
+
+
+        if not all_blocks:
             return {"html": "<p>No verses found for this reference and translation.</p>"}
 
-        html = render_passage_html(rows, translation)
+        html = "<hr>".join(all_blocks)
         return {"html": html}
+
+
 
     return app
 
