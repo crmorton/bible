@@ -24,15 +24,29 @@ except ImportError:  # pragma: no cover
 def load_references(filename):
     refs = []
     with open(filename, 'r', encoding='utf-8') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            if row and row[0].strip():
-                refs.append(row[0].strip())
+        if filename.lower().endswith('.csv'):
+            reader = csv.reader(f)
+            for row in reader:
+                if row and row[0].strip():
+                    refs.append(row[0].strip())
+        else:
+            # For .txt or other files, assume one reference (collection) per line
+            for line in f:
+                line = line.strip()
+                if line:
+                    refs.append(line)
     return refs
 
 
-def fetch_passage(api_base_url, osis_ref, translation, session):
-    encoded_ref = quote(f"osis:{osis_ref}")
+def fetch_passage(api_base_url, ref, translation, session):
+    # Only add 'osis:' if it looks like a pure OSIS reference (no spaces or colons, but has a dot)
+    # and doesn't have it already. This allows the API to use the fast-path for OSIS
+    # but uses the JS parser for more complex or human-readable references.
+    if not ref.startswith("osis:") and "." in ref and " " not in ref and ":" not in ref:
+        encoded_ref = quote(f"osis:{ref}")
+    else:
+        encoded_ref = quote(ref)
+        
     url = f"{api_base_url}?ref={encoded_ref}&translation={translation}"
 
     start_time = time.time()
@@ -52,7 +66,7 @@ def fetch_passage(api_base_url, osis_ref, translation, session):
         error_msg = str(e)
 
     duration = time.time() - start_time
-    return {"ref": osis_ref, "duration": duration, "success": success, "error": error_msg}
+    return {"ref": ref, "duration": duration, "success": success, "error": error_msg}
 
 
 def run_benchmark(
