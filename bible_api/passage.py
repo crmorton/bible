@@ -104,8 +104,10 @@ def render_passage_html(rows, translation):
             current_para_md5 = para_md5
             is_first_span_in_para = True
 
+        just_added_br = False
         if "poetry" in path and not is_first_span_in_para:
             res_html.append("<br>")
+            just_added_br = True
 
         common_count = 0
         for i in range(min(len(current_path_tags), len(target_tags))):
@@ -117,6 +119,7 @@ def render_passage_html(rows, translation):
         while len(current_path_tags) > common_count:
             res_html.append(current_path_tags.pop()[1])
 
+        newly_opened_levels = []
         for i in range(common_count, len(target_tags)):
             tag_str = target_tags[i]
             open_tag, close_tag = parse_tag(tag_str)
@@ -134,9 +137,7 @@ def render_passage_html(rows, translation):
             if "span.indent-" in tag_str:
                 level_match = re.search(r'indent-(\d+)', tag_str)
                 if level_match:
-                    level = int(level_match.group(1))
-                    spaces = " " * (level * 4)
-                    res_html.append(f'<span class="indent-{level}-breaks">{spaces}</span>')
+                    newly_opened_levels.append(int(level_match.group(1)))
 
         span_id_attr = f' id="{span_id}"' if span_id else ""
 
@@ -151,9 +152,29 @@ def render_passage_html(rows, translation):
                 if v_start_db == 1:
                     prefix = f'<span class="chapternum">{chapter_db}&nbsp;</span>'
                 else:
-                    prefix = f'<sup class="versenum">{verse_label} </sup>'
+                    prefix = f'<sup class="versenum">{verse_label}&nbsp;</sup>'
 
-        span_html = f"<span{span_id_attr} class=\"{class_attr}\">{prefix}{span_text}</span>"
+        # Identify indents to apply to this row
+        breaks_html = ""
+        needed_levels = []
+        if is_first_span_in_para or just_added_br:
+            # Apply all currently active indents at the start of a line/paragraph
+            for tag_str in target_tags:
+                if "span.indent-" in tag_str:
+                    m = re.search(r'indent-(\d+)', tag_str)
+                    if m:
+                        level = int(m.group(1))
+                        if level not in needed_levels:
+                            needed_levels.append(level)
+        else:
+            # Otherwise, only apply levels that were newly opened in this row
+            needed_levels = newly_opened_levels
+
+        for level in needed_levels:
+            spaces = "&nbsp;" * (level * 4)
+            breaks_html += f'<span class="indent-{level}-breaks">{spaces}</span>'
+
+        span_html = f"<span{span_id_attr} class=\"{class_attr}\">{prefix}{breaks_html}{span_text}</span>"
         res_html.append(span_html)
 
         is_first_span_in_para = False
